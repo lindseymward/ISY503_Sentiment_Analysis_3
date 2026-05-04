@@ -61,9 +61,10 @@ def analyze_sentiment(user_text):
     prediction = real_model.predict(padded_sequence, verbose=0)[0][0]
 
     if prediction >= 0.5:
-        return "Positive review", prediction
+        return "Negative review"
     else:
-        return "Negative review", prediction
+        return "Positive review"
+
 
 st.markdown("<h1 style='text-align: center;'>✨ Amazon Review Sentiment Analyzer ✨</h1>", unsafe_allow_html=True)
 st.subheader("Did they love it or hate it? Let the AI decide! 🤖")
