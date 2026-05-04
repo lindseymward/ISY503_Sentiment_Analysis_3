@@ -60,8 +60,8 @@ def show_sad_faces():
 
 @st.cache_resource 
 def load_brain():
-    # Look for the line below! This is where it connects your .h5 file:
-    model = tf.keras.models.load_model('my_model.h5')
+    # Look for the line below! This is where it connects your .keras file:
+    model = tf.keras.models.load_model('my_model.keras')
     
     # This connects the dictionary file:
     with open('tokenizer.pkl', 'rb') as handle:
@@ -75,8 +75,11 @@ real_model, real_tokenizer = load_brain()
 def analyze_sentiment(user_text):
     # Turn the user's text into numbers
     sequence = real_tokenizer.texts_to_sequences([user_text])
-    # Pad it so it's exactly 100 numbers long
-    padded_sequence = pad_sequences(sequence, maxlen=100, padding='post')
+    
+    # *** HERE IS THE FIX! ***
+    # Pad it so it's exactly 200 numbers long to match the AI's brain!
+    padded_sequence = pad_sequences(sequence, maxlen=200, padding='post')
+    
     # Ask the AI to grade it!
     prediction = real_model.predict(padded_sequence)[0][0]
     
