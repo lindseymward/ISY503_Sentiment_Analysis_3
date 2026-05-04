@@ -70,9 +70,9 @@ def analyze_sentiment(user_text):
 
     # ⚠️ IMPORTANT: adjust this depending on your training labels
     if prediction >= 0.5:
-        sentiment = "Negative review"
-    else:
         sentiment = "Positive review"
+    else:
+        sentiment = "Negative review"
 
     return sentiment, prediction
 
