@@ -1,12 +1,9 @@
 import streamlit as st
-import tensorflow as tf
 import pickle
-from tensorflow.keras.preprocessing.sequence import pad_sequences
+import re
 
-# --- 1. PAGE CONFIG ---
 st.set_page_config(page_title="Review Checker", page_icon="🕵️‍♀️", layout="centered")
 
-# --- 2. STYLING ---
 st.markdown("""
     <style>
     div.stButton > button:first-child {
@@ -23,60 +20,24 @@ st.markdown("""
         background-color: #cc0000;
         border: 2px solid #990000;
     }
-
-    @keyframes floatUp {
-        0% { bottom: -50px; opacity: 1; transform: translateX(0px); }
-        100% { bottom: 100vh; opacity: 0; transform: translateX(-30px); }
-    }
-
-    .sad-emoji {
-        position: fixed;
-        font-size: 40px;
-        z-index: 999999;
-        animation: floatUp 3s ease-in forwards;
-    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. SAD FACE FUNCTION ---
-def show_sad_faces():
-    html_code = """
-        <div class="sad-emoji" style="left: 10%; animation-delay: 0s;">😢</div>
-        <div class="sad-emoji" style="left: 30%; animation-delay: 0.2s;">😞</div>
-        <div class="sad-emoji" style="left: 50%; animation-delay: 0.5s;">👎</div>
-        <div class="sad-emoji" style="left: 70%; animation-delay: 0.1s;">😭</div>
-        <div class="sad-emoji" style="left: 90%; animation-delay: 0.4s;">😡</div>
-    """
-    st.markdown(html_code, unsafe_allow_html=True)
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r"<.*?>", " ", text)
+    text = re.sub(r"[^a-zA-Z\s]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
 
-# --- 4. LOAD MODEL + TOKENIZER ---
 @st.cache_resource
-def load_brain():
-    model = tf.keras.models.load_model("my_model.keras")
+def load_model():
+    with open("sentiment_model.pkl", "rb") as f:
+        model = pickle.load(f)
+    return model
 
-    with open("tokenizer.pkl", "rb") as handle:
-        tokenizer = pickle.load(handle)
+sentiment_model = load_model()
 
-    return model, tokenizer
-
-real_model, real_tokenizer = load_brain()
-
-# --- 5. PREDICTION FUNCTION ---
-def analyze_sentiment(user_text):
-    sequence = real_tokenizer.texts_to_sequences([user_text])
-    padded_sequence = pad_sequences(sequence, maxlen=200, padding="post")
-
-    prediction = real_model.predict(padded_sequence, verbose=0)[0][0]
-
-    # ⚠️ IMPORTANT: adjust this depending on your training labels
-    if prediction >= 0.5:
-        sentiment = "Positive review"
-    else:
-        sentiment = "Negative review"
-
-    return sentiment, prediction
-
-# --- 6. UI ---
 st.markdown("<h1 style='text-align: center;'>✨ Amazon Review Sentiment Analyzer ✨</h1>", unsafe_allow_html=True)
 st.subheader("Did they love it or hate it? Let the AI decide! 🤖")
 st.write("---")
@@ -85,20 +46,22 @@ user_input = st.text_area("✍️ Type or paste a product review below:", height
 
 if st.button("🚨 ANALYZE SENTIMENT 🚨"):
     if user_input.strip():
+        cleaned_input = clean_text(user_input)
 
-        result, confidence = analyze_sentiment(user_input)
+        prediction = sentiment_model.predict([cleaned_input])[0]
+        probability = sentiment_model.predict_proba([cleaned_input])[0]
 
         st.write("---")
-        st.markdown("### 🥁 Drumroll please...")
+        st.markdown("### 🥁 Result")
 
-        st.write(f"🔎 Model confidence score: {confidence:.4f}")
+        st.write(f"Negative probability: {probability[0]:.4f}")
+        st.write(f"Positive probability: {probability[1]:.4f}")
 
-        if result == "Positive review":
+        if prediction == 1:
             st.success("🌟 Outcome: Positive review")
             st.balloons()
         else:
             st.error("🚩 Outcome: Negative review")
-            show_sad_faces()
 
     else:
         st.warning("Oops! 🛑 Please enter a review first!")
